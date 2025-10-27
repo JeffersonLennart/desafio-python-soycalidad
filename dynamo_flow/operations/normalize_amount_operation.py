@@ -4,24 +4,45 @@ from operation import Operation
 class NormalizeAmountOperation(Operation):
     """
     Clase para normalizar un campo numérico.
-    Convierte a float, manejando diferentes separadores y símbolos.    
+    Convierte a float, manejando diferentes separadores y símbolos.
+
+    Attributes:
+        field_name (str): El campo donde se aplicara esta operación.        
+        target_type (str): Tipo de registro donde se aplica esta operación. Por defecto esta vacío.
     """
     
     def __init__(self, field_name:str, target_type:str = ""):
-        super().__init__(field_name=field_name, target_type=target_type)
-
+        super().__init__(field_name=field_name, target_type=target_type)        
+    
     # Es estatico porque no depende de una instancia de la clase
     @staticmethod
-    def dot_comma_number_to_float(number: str) -> float:
+    def number_to_float(number: str) -> float:
         """
-        Convierte un número con punto/coma decimal, con/sin separadores de miles a float Python.
+        Convierte cualquier formato numérico (con punto/coma decimal, con/sin separadores de miles, con simbolos de monedas, en notación científica, etc) a float Python.
+        
+        Args:
+            number (str): Número en cualquier formato
             
-            Args:
-                number: Número a transformar
-                
-            Returns:
-                float: El número convertido        
+        Returns:
+            float: El número convertido
         """
+        number = str(number)
+        # Verificar si el numero viene en notación científica
+        scientific_notation = r'[+-]?\d+[\.,]?\d*[eE][+-]?\d+'
+        if re.match(scientific_notation, number):            
+            return float(number.replace(',', '.'))                            
+
+        # Conserva solo dígitos, comas, puntos y guiones
+        number = re.sub(r'[^\d,.-]','', number)        
+        
+        # Si no es un número valido
+        if not number:
+            return None
+        
+        # Numeros especiales que terminan en -. Ejm: 1.234,56-
+        if number.endswith('-'):
+            number = '-' + number[:-1]        
+        
         # Caso 1: Cuando esta presente un unico separador (coma o punto) o ninguno
         dot_count = number.count('.')
         comma_count = number.count(',')        
@@ -47,38 +68,7 @@ class NormalizeAmountOperation(Operation):
             return float(number.replace(',', ''))
         else:
         # Con punto para miles y coma para decimal. Ejem: 1.234,56
-            return float(number.replace('.', '').replace(',', '.'))
-    
-    # Es estatico porque no depende de una instancia de la clase
-    @staticmethod
-    def number_to_float(number: str) -> float:
-        """
-        Convierte cualquier formato numérico (con punto/coma decimal, con/sin separadores de miles, con simbolos de monedas, en notación científica, etc) a float Python.
-        
-        Args:
-            number: Número en cualquier formato
-            
-        Returns:
-            float: El número convertido
-        """
-        number = str(number)
-        # Verificar si el numero viene en notación científica
-        scientific_notation = r'[+-]?\d+[\.,]?\d*[eE][+-]?\d+'
-        if re.match(scientific_notation, number):            
-            return float(number.replace(',', '.'))                            
-
-        # Conserva solo dígitos, comas, puntos, guiones y abreviaciones
-        number = re.sub(r'[^\d,.-]','', number)        
-        
-        # Numeros especiales que terminan en -. Ejm: 1.234,56-
-        if number.endswith('-'):
-            number = '-' + number[:-1]
-
-        # Si no es un número
-        if not number:
-            return None
-        
-        return NormalizeAmountOperation.dot_comma_number_to_float(number)                
+            return float(number.replace('.', '').replace(',', '.'))            
 
     def execute(self, record : dict[str, any]) -> tuple:
         logs = list()
@@ -90,13 +80,14 @@ class NormalizeAmountOperation(Operation):
             record[field_name] = None
             logs.append({
                 "type": "WARNING",
+                "operation": self.__class__.__name__,
                 "field": f"{field_name}",
                 "message": f"El campo no existe."                
             })
         else:
             # Realizamos la conversión. Si falla registramos el log y establecemos el campo en None
             try:
-                value_float = NormalizeAmountOperation.to_float(value)
+                value_float = NormalizeAmountOperation.number_to_float(value)
                 if value_float:
                     record[field_name] = value_float
                 # Si value es None, entonces el campo no es un numero valido 
@@ -104,6 +95,7 @@ class NormalizeAmountOperation(Operation):
                     record[field_name] = None
                     logs.append({
                         "type": "WARNING",
+                        "operation": self.__class__.__name__,
                         "field": f"{field_name}",
                         "message": f"El campo no es un número."                    
                     })
@@ -112,6 +104,7 @@ class NormalizeAmountOperation(Operation):
                 record[field_name] = None
                 logs.append({
                     "type": "ERROR",
+                    "operation": self.__class__.__name__,
                     "field": f"{field_name}",
                     "message": f"Error en la conversión: {e}"                    
                 })
@@ -119,6 +112,7 @@ class NormalizeAmountOperation(Operation):
         return record, logs
 
 if __name__ == '__main__':
+    # Probar la conversión a float
     numeros_especiales = [
     "12345",    
     "$1,234.56",
@@ -167,5 +161,20 @@ if __name__ == '__main__':
     "1,234.56 Cr",
     "1,234.56 Dr"    
     ]
-    for i, value in enumerate(numeros_especiales):        
-        print(value,"->", NormalizeAmountOperation.number_to_float(value))
+    # for value in numeros_especiales:        
+    #     print(value,"->", NormalizeAmountOperation.number_to_float(value))   
+
+    # Probar el método execute
+    operation1 = NormalizeAmountOperation("price")
+    record_example = {
+        "__type__": "order_event",
+        "order_id": "ORD789",
+        "customer_name": "Luis Vargas",
+        # "amount": "25.00",
+        "price": "25,55 EUR",
+        # "price": "---",
+        "timestamp": "2023-10-26T14:00:00Z"
+    }
+    new_record, logs = operation1.execute(record_example)
+    print(new_record)
+    print(logs)
