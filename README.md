@@ -21,7 +21,6 @@ dynamo_flow/
     ├── product_update_record.py
     └── record.py
 ```
----
 
 ## Patrón de diseño utilizado
 
@@ -42,7 +41,6 @@ DynamoFlow implementa el patrón de diseño **Strategy** en dos niveles:
 - **Interfaz:** La clase abstracta `Record`, dentro del subpaquete `records`.  
 - **Estrategias:** Las clases `OrderEventRecord` y `ProductUpdateRecord`, donde se definen las operaciones por defecto asociadas a cada tipo de registro.
 
----
 
 ## Descripción de los archivos
 
@@ -70,14 +68,12 @@ DynamoFlow implementa el patrón de diseño **Strategy** en dos niveles:
 - **`records/record.py`**  
   `Record`: clase base abstracta para tipos de registro.
 
----
 
 ## Estilo de programación
 
 El código sigue la **filosofía de Python**, priorizando la simplicidad, claridad y mantenibilidad.
 Se emplean **Type Hints** para especificar los tipos esperados en parámetros y valores de retorno, y **Docstrings** para documentar clases, métodos y funciones, detallando su propósito, argumentos y valores devueltos.
 
----
 
 ## Beneficios de la arquitectura
 
@@ -88,7 +84,6 @@ Esta arquitectura, basada en paquetes y en el patrón Strategy, permite una solu
 
 **No es necesario modificar archivos existentes para extender la funcionalidad.**
 
----
 
 ## Justificación (respondiendo las preguntas del desafio python)
 
@@ -111,7 +106,6 @@ Para **NormalizeAmountOperation:**
 - En el método `NormalizeAmountOperation.execute`, se valida la existencia del campo al inicio.
 - Si el campo no está presente, se establece su valor como `None` y se registra una advertencia, permitiendo que el procesamiento continúe sin interrupciones.
 
---- 
 ## Ejemplos de uso
 
 Registrar operaciones para un tipo de registro:
