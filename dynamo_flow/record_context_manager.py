@@ -58,26 +58,36 @@ class RecordContextManager:
                     "message": f"El registro esta vacío o no tiene un formato valido."                
                 })
                 yield record, logs
-                continue
-            # Valida que el registro tiene operaciones asignadas manualmente o por defecto
-            if record_type not in self.record_config or record_type not in RecordContextManager._records_by_default:
-                logs.append({
-                    "type": "WARNING",                    
-                    "message": f"El registro no tiene operaciones asignadas."                
-                })
-                yield record, logs
-                continue
+                continue            
             # Realiza las operaciones por defecto al registro
             if default:
-                order_event_record = RecordContextManager._records_by_default.get(record_type)
-                yield order_event_record.process_record(record)
+                # Valida que el registro tiene operaciones asignadas por defecto
+                if record_type in RecordContextManager._records_by_default:
+                    order_event_record = RecordContextManager._records_by_default.get(record_type)
+                    yield order_event_record.process_record(record)
+                else:
+                    logs.append({
+                        "type": "WARNING",                    
+                        "message": f"El registro no tiene operaciones asignadas."                
+                    })
+                    yield record, logs
+                    continue                
+            # Realiza las operaciones asignadas manualmente al registro. 
             else:                
-                # Realiza las operaciones asignadas manualmente al registro. 
-                operations = self.record_config.get(record_type)
-                for operation in operations:
-                    record, new_logs = operation.execute(record)
-                    logs.extend(new_logs)
-                yield record, logs
+                # Valida que el registro tiene operaciones asignadas manualmente
+                if record_type in self.record_config:
+                    operations = self.record_config.get(record_type)
+                    for operation in operations:
+                        record, new_logs = operation.execute(record)
+                        logs.extend(new_logs)
+                    yield record, logs
+                else:
+                    logs.append({
+                        "type": "WARNING",                    
+                        "message": f"El registro no tiene operaciones asignadas."                
+                    })
+                    yield record, logs
+                    continue                
 
     def set_default_record(self, record_type: str, operations: list[Operation]):
         """
@@ -110,7 +120,9 @@ class RecordContextManager:
 if __name__ == '__main__':
 
     import re
-    from pprint import pprint 
+    from pprint import pprint
+    from copy import deepcopy
+
 
     records_example = [{
         "__type__": "order_event",
@@ -124,13 +136,14 @@ if __name__ == '__main__':
         "price": "sdff",
         "is_active": "Trues"        
     }]
-    
-    record_manager = RecordContextManager()
+
+    records_example_2 = deepcopy(records_example)
+    record_manager = RecordContextManager()    
 
     # Registrar operaciones manualmente
     record_manager.register_context("order_event",[
         NormalizeAmountOperation(field_name="amount"),
-        ContextualFieldValidation(field_name="order_id", required=True, condition=lambda x: re.search(r'ORD\d+',x)),
+        ContextualFieldValidation(field_name="order_id", required=True, condition=lambda x: re.match(r'^ORD\d+$',x)),
         ContextualFieldValidation(field_name="customer_name", required=True)
     ])
 
@@ -147,10 +160,12 @@ if __name__ == '__main__':
         print("Registro:")
         pprint(record, sort_dicts=False)
         print("Logs:")
-        pprint(logs, sort_dicts=False)        
+        pprint(logs, sort_dicts=False)    
+
     print('\n')
-    # Ejecutar el proceso de records con operaciones por defecto
-    for i, (record, logs) in enumerate(record_manager.process_stream(records_example)):
+
+    # Ejecutar el proceso de records con operaciones por defecto    
+    for i, (record, logs) in enumerate(record_manager.process_stream(records_example_2)):
         status = "INVÁLIDO" if len(logs) else "VALIDO"
         print(f"===================REGISTRO {i+1}: {status}===================")
         print("Registro:")

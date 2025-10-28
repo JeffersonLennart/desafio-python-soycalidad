@@ -28,7 +28,7 @@ class NormalizeAmountOperation(Operation):
         """
         number = str(number)
         # Verificar si el numero viene en notación científica
-        scientific_notation = r'[+-]?\d+[\.,]?\d*[eE][+-]?\d+'
+        scientific_notation = r'^[+-]?\d+[\.,]?\d*[eE][+-]?\d+$'
         if re.match(scientific_notation, number):            
             return float(number.replace(',', '.'))                            
 

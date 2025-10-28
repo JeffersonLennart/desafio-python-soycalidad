@@ -62,7 +62,7 @@ if __name__ == '__main__':
         "timestamp": "2023-10-26T14:00:00Z"
     }
 
-    operation = ContextualFieldValidation("order_id", required=True, condition=lambda x: re.search(r'ORD\d+',x))
+    operation = ContextualFieldValidation("order_id", required=True, condition=lambda x: re.match(r'^ORD\d+$',x))
     record, logs = operation.execute(record_example)
     print(record)
     print(logs)

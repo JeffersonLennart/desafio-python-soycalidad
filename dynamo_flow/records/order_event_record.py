@@ -21,7 +21,7 @@ class OrderEventRecord(Record):
         self._operations = [
             NormalizeAmountOperation(field_name="amount"),
             ContextualFieldValidation(field_name="order_id", required=True),
-            ContextualFieldValidation(field_name="customer_name", required=True)
+            ContextualFieldValidation(field_name="customer_name", required=True),
         ]
 
     def process_record(self, record : dict[str, any]) -> tuple[dict[str, any], list]:
