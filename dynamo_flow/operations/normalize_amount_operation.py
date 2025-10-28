@@ -70,7 +70,7 @@ class NormalizeAmountOperation(Operation):
         # Con punto para miles y coma para decimal. Ejem: 1.234,56
             return float(number.replace('.', '').replace(',', '.'))            
 
-    def execute(self, record : dict[str, any]) -> tuple:
+    def execute(self, record : dict[str, any]) -> tuple[dict[str, any], list]:
         logs = list()
         # Recuperamos el field_name y verificamos si existe en el record
         field_name = self.parameters.get('field_name')

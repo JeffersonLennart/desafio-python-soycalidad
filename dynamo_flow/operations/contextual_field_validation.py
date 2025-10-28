@@ -15,7 +15,7 @@ class ContextualFieldValidation(Operation):
     def __init__(self, field_name: str, required: bool = True, condition: Callable[[any], bool] = lambda x: x is not None and x != '', target_type: str = ""):
         super().__init__(field_name=field_name, required=required, condition=condition, target_type=target_type)  
 
-    def execute(self, record : dict[str, any]) -> tuple:
+    def execute(self, record : dict[str, any]) -> tuple[dict[str, any], list]:
         logs = list()
         # Recuperamos los atributos de la operación y el valor del campo en operación
         field_name = self.parameters.get('field_name')

@@ -11,7 +11,7 @@ class Operation(ABC):
         self.parameters = kwargs
 
     @abstractmethod
-    def execute(self, record : dict[str, any]) -> tuple:
+    def execute(self, record : dict[str, any]) -> tuple[dict[str, any], list]:
         """
         Ejecuta la operación a un record (registro).
 
@@ -19,8 +19,8 @@ class Operation(ABC):
             record: El registro a procesar.
         
         Returns:
-            tuple:
-                - record: Posiblemente modificado
-                - logs: Lista de advertencias o errores.
+            tuple: Una tupla conteniendo:
+                - dict[str, any]: Registro modificado.
+                - list: Lista de advertencias o errores.
         """
         pass
