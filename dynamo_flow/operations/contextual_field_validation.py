@@ -1,5 +1,5 @@
 from typing import Callable
-from operation import Operation
+from .operation import Operation
 
 class ContextualFieldValidation(Operation):
     """

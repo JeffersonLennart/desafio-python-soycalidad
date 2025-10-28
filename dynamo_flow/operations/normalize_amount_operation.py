@@ -1,5 +1,5 @@
 import re
-from operation import Operation
+from .operation import Operation
 
 class NormalizeAmountOperation(Operation):
     """
